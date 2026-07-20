@@ -103,8 +103,13 @@ header.app-header h1 {
   inset: 0;
   background: rgba(20,10,10,0.45);
   z-index: 45;
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
-.drawer-backdrop.active { display: block; }
+.drawer-backdrop.active {
+  display: block;
+  opacity: 1;
+}
 
 .drawer {
   position: fixed;
@@ -159,10 +164,32 @@ main {
 }
 
 .section { display: none; }
-.section.active { display: block; }
+.section.active {
+  display: block;
+  animation: sectionEnter 0.32s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
 
 .fintab { display: none; }
-.fintab.active { display: block; }
+.fintab.active {
+  display: block;
+  animation: sectionEnter 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@keyframes sectionEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Drawer items: leve efecto al activarse */
+.drawer-item {
+  transition: background 0.2s ease, color 0.2s ease;
+}
 
 .section-heading { margin-bottom: 16px; }
 .section-heading h2 {
@@ -237,6 +264,19 @@ main {
   font-size: 14px;
 }
 
+.btn-extra {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  border: 1.5px dashed var(--outline);
+  background: transparent;
+  color: var(--accent-text);
+}
+.btn-extra .material-symbols-outlined { font-size: 19px; }
+
 .btn-danger {
   background: rgba(255, 84, 73, 0.15);
   color: var(--error);
@@ -259,6 +299,10 @@ main {
   font-size: 15px;
   color: var(--accent-text);
   text-transform: capitalize;
+  display: inline-block;
+}
+.calendar-month-label.cal-label-fade {
+  animation: sectionEnter 0.25s ease;
 }
 
 .calendar-weekdays {
@@ -281,6 +325,22 @@ main {
   gap: 6px;
   margin-bottom: 14px;
   touch-action: pan-y;
+}
+
+.calendar-grid.cal-anim-next {
+  animation: calSlideNext 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.calendar-grid.cal-anim-prev {
+  animation: calSlidePrev 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@keyframes calSlideNext {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes calSlidePrev {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
 
 .cal-day {
@@ -550,6 +610,24 @@ table.finance-table .ped { color: #7e22ce; }
   padding: 20px;
 }
 .modal-sheet h3 { margin: 0 0 14px 0; font-size: 17px; color: var(--accent-text); }
+.modal-subtitle {
+  margin: -8px 0 14px 0;
+  font-size: 12.5px;
+  color: var(--on-surface-variant);
+  line-height: 1.4;
+}
+
+.appt-extra-badge {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: var(--tertiary-container, #fde68a);
+  color: var(--on-tertiary-container, #713f12);
+  padding: 3px 8px;
+  border-radius: 20px;
+  margin-left: 6px;
+}
 
 .field { margin-bottom: 12px; }
 .field label { display: block; font-size: 12px; color: var(--on-surface-variant); margin-bottom: 4px; font-weight: 500; }
@@ -567,15 +645,24 @@ table.finance-table .ped { color: #7e22ce; }
   outline: none;
   border-color: var(--primary);
 }
-.field input.is-locked {
+.field input.is-locked,
+.field select.is-locked {
   background: var(--surface-container-high);
   color: var(--on-surface-variant);
   font-weight: 600;
+  opacity: 0.85;
+  pointer-events: none;
 }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .field-group-title { font-size: 12px; font-weight: 700; color: var(--accent-text-secondary); margin: 16px 0 8px; text-transform: uppercase; letter-spacing: 0.03em; }
 
 .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+.modal-actions .btn-primary,
+.modal-actions .btn-secondary,
+.modal-actions .btn-danger {
+  width: auto;
+  margin-bottom: 0;
+}
 .modal-actions button {
   flex: 1;
   padding: 13px 16px;

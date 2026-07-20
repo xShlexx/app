@@ -55,6 +55,10 @@
           <strong id="appointmentsCount">0</strong> turno(s) cargado(s)
         </div>
       </div>
+      <button class="btn-secondary btn-extra" id="openExtraApptBtn">
+        <span class="material-symbols-outlined">add_circle</span>
+        Agregar turno extra
+      </button>
       <div id="appointmentsList"></div>
     </section>
 
@@ -236,6 +240,39 @@
     </div>
   </div>
 
+  <!-- ===================== MODAL TURNO EXTRA ===================== -->
+  <div class="modal-backdrop" id="extraApptModal">
+    <div class="modal-sheet">
+      <h3 id="extraApptModalTitle">Turno extra</h3>
+      <form id="extraApptForm">
+        <input type="hidden" id="extraApptEditId" />
+        <div class="field">
+          <label for="extraApptClientName">Nombre del cliente</label>
+          <input type="text" id="extraApptClientName" required />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="extraApptDate">Fecha</label>
+            <input type="date" id="extraApptDate" required />
+          </div>
+          <div class="field">
+            <label for="extraApptTime">Horario</label>
+            <input type="time" id="extraApptTime" required />
+          </div>
+        </div>
+        <div class="field">
+          <label for="extraApptPhone">Teléfono (opcional)</label>
+          <input type="tel" id="extraApptPhone" />
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-danger" id="deleteExtraApptBtn">Eliminar</button>
+          <button type="button" class="btn-secondary" id="closeExtraApptModal">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ===================== MODAL FINANZAS ===================== -->
   <div class="modal-backdrop" id="financeModal">
     <div class="modal-sheet">
@@ -246,7 +283,7 @@
           <input type="date" id="finDate" required />
         </div>
 
-        <div class="field-group-title">Turno mañana</div>
+        <div class="field-group-title">Turno 1</div>
         <div class="field-row">
           <div class="field"><label>Efectivo</label><input type="number" step="0.01" min="0" id="fin_morning_income" /></div>
           <div class="field"><label>Transferencia</label><input type="number" step="0.01" min="0" id="fin_morning_transfer" /></div>
@@ -256,7 +293,7 @@
           <div class="field"><label>Pedicura transf.</label><input type="number" step="0.01" min="0" id="fin_morning_pedicure_transfer" /></div>
         </div>
 
-        <div class="field-group-title">Turno tarde</div>
+        <div class="field-group-title">Turno 2</div>
         <div class="field-row">
           <div class="field"><label>Efectivo</label><input type="number" step="0.01" min="0" id="fin_afternoon_income" /></div>
           <div class="field"><label>Transferencia</label><input type="number" step="0.01" min="0" id="fin_afternoon_transfer" /></div>
