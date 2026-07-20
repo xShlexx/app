@@ -1,0 +1,6 @@
+{
+  "appId": "com.ymnails.dashboard",
+  "appName": "YM Dashboard",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
