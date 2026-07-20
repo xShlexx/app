@@ -37,6 +37,9 @@ jobs:
             npx cap sync android
           fi
 
+      - name: Generar iconos y splash
+        run: npx capacitor-assets generate --android
+
       - name: Dar permisos a gradlew
         run: chmod +x android/gradlew
 
