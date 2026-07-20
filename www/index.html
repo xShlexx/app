@@ -3,11 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>YM Dashboard</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=4" />
+  <title>Bienvenida Yuly</title>
+  <link rel="stylesheet" href="fonts.css?v=1" />
+  <link rel="stylesheet" href="style.css?v=5" />
 </head>
 <body>
 
@@ -16,7 +14,7 @@
       <button id="menuBtn" class="menu-btn" aria-label="Abrir menú">
         <span class="material-symbols-outlined">menu</span>
       </button>
-      <h1>YM Dashboard</h1>
+      <h1>Bienvenida Yuly</h1>
     </div>
     <div class="header-actions">
       <button id="exportBtn" class="icon-btn-header" title="Backup">
@@ -64,7 +62,6 @@
     <section id="section-calendario" class="section">
       <div class="section-heading">
         <h2>Calendario de turnos</h2>
-        <p>Tocá un día disponible para agregar un turno</p>
       </div>
 
       <div class="card calendar-nav">
@@ -77,13 +74,6 @@
         <span>DOM</span><span>LUN</span><span>MAR</span><span>MIÉ</span><span>JUE</span><span>VIE</span><span>SÁB</span>
       </div>
       <div class="calendar-grid" id="calendarGrid"></div>
-
-      <div class="calendar-legend">
-        <span><i class="legend-dot open"></i>Disponible</span>
-        <span><i class="legend-dot low"></i>Poca disp.</span>
-        <span><i class="legend-dot full"></i>Lleno</span>
-        <span><i class="legend-dot off"></i>No trabaja</span>
-      </div>
     </section>
 
     <!-- ===================== FINANZAS ===================== -->

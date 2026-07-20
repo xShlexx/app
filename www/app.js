@@ -38,6 +38,16 @@ function isSaturday(dateStr) {
 function isSunday(dateStr) {
   return new Date(dateStr + 'T00:00:00').getDay() === 0;
 }
+function relativeDayLabel(dateStr) {
+  const today = new Date(todayStr() + 'T00:00:00');
+  const target = new Date(dateStr + 'T00:00:00');
+  const diffDays = Math.round((target - today) / 86400000);
+  if (diffDays === 0) return 'Hoy';
+  if (diffDays === 1) return 'Mañana';
+  if (diffDays === -1) return 'Ayer';
+  if (diffDays <= -2) return 'Pasado';
+  return 'Próx';
+}
 const MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const WEEKDAY_NAMES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 // Cupos totales por día: domingo no se trabaja, sábado 1 turno, resto 2 turnos
@@ -73,22 +83,25 @@ function saveFinances(obj) {
   localStorage.setItem(STORAGE_KEYS.finances, JSON.stringify(obj));
 }
 
-// Elimina turnos de fechas ya pasadas (igual que el DELETE ... < CURDATE() del PHP)
+// Elimina turnos que ya pasaron hace 3 días o más (antes se borraban apenas pasaba el día)
 function cleanupPastAppointments() {
-  const today = todayStr();
+  const today = new Date(todayStr() + 'T00:00:00');
+  const cutoff = new Date(today);
+  cutoff.setDate(cutoff.getDate() - 2); // se conservan hasta 2 días pasados; al 3er día se borran
+  const cutoffStr = toDateStr(cutoff);
   const list = loadAppointments();
-  const filtered = list.filter(a => a.appointment_date >= today);
+  const filtered = list.filter(a => a.appointment_date >= cutoffStr);
   if (filtered.length !== list.length) saveAppointments(filtered);
 }
 
 // ---------- TURNOS ----------
-const ALL_TIMES = ['08:30', '13:30'];
+const ALL_TIMES = ['13:30', '15:30'];
 
 function getAvailableTimes(dateStr, excludeId) {
   if (!dateStr) return [];
   const totalSlots = slotsForDate(dateStr);
   if (totalSlots === 0) return [];
-  const base = totalSlots === 1 ? ['08:30'] : ALL_TIMES.slice();
+  const base = totalSlots === 1 ? ['13:30'] : ALL_TIMES.slice();
   const list = loadAppointments();
   const taken = list
     .filter(a => a.appointment_date === dateStr && a.id !== excludeId)
@@ -116,15 +129,27 @@ function renderAppointments() {
   list.forEach(a => {
     const card = document.createElement('div');
     card.className = 'appt-card';
+    const [y, m, d] = a.appointment_date.split('-');
+    const monthAbbr = MONTH_NAMES[parseInt(m, 10) - 1].slice(0, 3).toUpperCase();
+    const timeLabel = a.appointment_time === '13:30' ? '01:30 PM' : '03:30 PM';
     card.innerHTML = `
-      <div>
-        <div class="appt-date">${dayName(a.appointment_date)} ${fmtDateFull(a.appointment_date)} · ${a.appointment_time}</div>
-        <div class="appt-name">${escapeHtml(a.client_name)}</div>
-        <div class="appt-meta">${a.phone ? '<span class="material-symbols-outlined">call</span> ' + escapeHtml(a.phone) : 'Sin teléfono'}</div>
+      <div class="appt-badge">
+        <span class="appt-badge-month">${monthAbbr}</span>
+        <span class="appt-badge-day">${parseInt(d, 10)}</span>
       </div>
-      <div class="appt-actions">
-        <button class="icon-btn" data-edit="${a.id}" title="Editar"><span class="material-symbols-outlined">edit</span></button>
-        <button class="icon-btn danger" data-del="${a.id}" title="Eliminar"><span class="material-symbols-outlined">delete</span></button>
+      <div class="appt-card-body">
+        <div class="appt-card-top">
+          <div class="appt-name">${escapeHtml(a.client_name)}</div>
+          <span class="appt-time-pill">${timeLabel}</span>
+        </div>
+        <div class="appt-meta">${a.phone ? '<span class="material-symbols-outlined">call</span> ' + escapeHtml(a.phone) : 'Sin teléfono'}</div>
+        <div class="appt-card-footer">
+          <span class="appt-status-pill">${relativeDayLabel(a.appointment_date)}</span>
+          <div class="appt-actions">
+            <button class="icon-btn" data-edit="${a.id}" title="Editar"><span class="material-symbols-outlined">edit</span></button>
+            <button class="icon-btn danger" data-del="${a.id}" title="Eliminar"><span class="material-symbols-outlined">delete</span></button>
+          </div>
+        </div>
       </div>
     `;
     container.appendChild(card);
@@ -202,7 +227,7 @@ function updateTimeOptions(dateStr, excludeId) {
     return;
   }
   available.forEach(t => {
-    const label = t === '08:30' ? '08:30 AM' : '01:30 PM';
+    const label = t === '13:30' ? '01:30 PM' : '03:30 PM';
     select.innerHTML += `<option value="${t}">${label}</option>`;
   });
 }
@@ -561,6 +586,33 @@ function renderCalendar() {
   });
 }
 
+// ---------- Swipe del calendario (deslizar para cambiar de mes) ----------
+function setupCalendarSwipe() {
+  const grid = document.getElementById('calendarGrid');
+  if (!grid) return;
+  let startX = 0, startY = 0, tracking = false;
+  const THRESHOLD = 40;
+
+  grid.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    tracking = true;
+  }, { passive: true });
+
+  grid.addEventListener('touchend', (e) => {
+    if (!tracking) return;
+    tracking = false;
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - startX;
+    const dy = touch.clientY - startY;
+    if (Math.abs(dx) > THRESHOLD && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx < 0) changeCalendarMonth(1);
+      else changeCalendarMonth(-1);
+    }
+  }, { passive: true });
+}
+
 // ---------- Navegación principal ----------
 function showMainSection(section) {
   ['turnos', 'calendario', 'finanzas'].forEach(s => {
@@ -585,6 +637,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderAppointments();
   showFinanceTab('daily');
   renderCalendar();
+  setupCalendarSwipe();
 
   document.getElementById('menuBtn').addEventListener('click', openDrawer);
   document.getElementById('drawerBackdrop').addEventListener('click', closeDrawer);
