@@ -4,45 +4,105 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>YM Dashboard</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=4" />
 </head>
 <body>
 
   <header class="app-header">
-    <h1>YM Dashboard</h1>
-    <div>
-      <button id="exportBtn">⬇ Backup</button>
-      <label class="btn-header" style="margin-left:6px;">
-        <button type="button" onclick="document.getElementById('importInput').click()">⬆ Restaurar</button>
-        <input type="file" id="importInput" accept="application/json" style="display:none" />
-      </label>
+    <div class="header-left">
+      <button id="menuBtn" class="menu-btn" aria-label="Abrir menú">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
+      <h1>YM Dashboard</h1>
+    </div>
+    <div class="header-actions">
+      <button id="exportBtn" class="icon-btn-header" title="Backup">
+        <span class="material-symbols-outlined">download</span>
+      </button>
+      <button id="importTriggerBtn" class="icon-btn-header" title="Restaurar">
+        <span class="material-symbols-outlined">upload</span>
+      </button>
+      <input type="file" id="importInput" accept="application/json" hidden />
     </div>
   </header>
 
-  <nav class="tabs">
-    <button id="navbtn-turnos" class="active">📅 Turnos</button>
-    <button id="navbtn-finanzas">💰 Finanzas</button>
+  <!-- ===================== MENÚ (drawer) ===================== -->
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <nav class="drawer" id="drawer">
+    <div class="drawer-title">Menú</div>
+    <button id="navbtn-turnos" class="drawer-item active">
+      <span class="material-symbols-outlined">list_alt</span>
+      <span>Turnos</span>
+    </button>
+    <button id="navbtn-calendario" class="drawer-item">
+      <span class="material-symbols-outlined">calendar_month</span>
+      <span>Calendario</span>
+    </button>
+    <button id="navbtn-finanzas" class="drawer-item">
+      <span class="material-symbols-outlined">payments</span>
+      <span>Finanzas</span>
+    </button>
   </nav>
 
   <main>
 
     <!-- ===================== TURNOS ===================== -->
     <section id="section-turnos" class="section active">
-      <div class="card">
-        <strong id="appointmentsCount">0</strong> turno(s) cargado(s)
+      <div class="card summary-card">
+        <span class="material-symbols-outlined summary-icon">calendar_month</span>
+        <div>
+          <strong id="appointmentsCount">0</strong> turno(s) cargado(s)
+        </div>
       </div>
       <div id="appointmentsList"></div>
     </section>
 
+    <!-- ===================== CALENDARIO ===================== -->
+    <section id="section-calendario" class="section">
+      <div class="section-heading">
+        <h2>Calendario de turnos</h2>
+        <p>Tocá un día disponible para agregar un turno</p>
+      </div>
+
+      <div class="card calendar-nav">
+        <button id="calPrevBtn" class="icon-btn" title="Mes anterior"><span class="material-symbols-outlined">chevron_left</span></button>
+        <span id="calMonthLabel" class="calendar-month-label"></span>
+        <button id="calNextBtn" class="icon-btn" title="Mes siguiente"><span class="material-symbols-outlined">chevron_right</span></button>
+      </div>
+
+      <div class="calendar-weekdays">
+        <span>DOM</span><span>LUN</span><span>MAR</span><span>MIÉ</span><span>JUE</span><span>VIE</span><span>SÁB</span>
+      </div>
+      <div class="calendar-grid" id="calendarGrid"></div>
+
+      <div class="calendar-legend">
+        <span><i class="legend-dot open"></i>Disponible</span>
+        <span><i class="legend-dot low"></i>Poca disp.</span>
+        <span><i class="legend-dot full"></i>Lleno</span>
+        <span><i class="legend-dot off"></i>No trabaja</span>
+      </div>
+    </section>
+
     <!-- ===================== FINANZAS ===================== -->
     <section id="section-finanzas" class="section">
+      <div class="section-heading">
+        <h2>Resumen Financiero</h2>
+        <p>Seguimiento de ingresos y ganancias</p>
+      </div>
+
       <div class="subtabs">
         <button id="finbtn-daily" class="active">Diario</button>
         <button id="finbtn-weekly">Semanal</button>
         <button id="finbtn-monthly">Mensual</button>
       </div>
 
-      <button class="btn-primary" id="openFinanceModalBtn" style="margin-bottom:14px;">+ Registrar día</button>
+      <button class="btn-primary" id="openFinanceModalBtn">
+        <span class="material-symbols-outlined">add</span>
+        Registrar día
+      </button>
 
       <!-- TAB DIARIO -->
       <div id="fintab-daily" class="fintab active">
@@ -51,61 +111,107 @@
           <input type="date" id="financeDailyDate" />
         </div>
         <div class="kpi-grid">
-          <div class="kpi wide"><div class="label">Total General</div><div class="value" id="dailyGrand">$0.00</div></div>
-          <div class="kpi amber"><div class="label">Efectivo</div><div class="value" id="dailyEfectivo">$0.00</div></div>
-          <div class="kpi blue"><div class="label">Transferencia</div><div class="value" id="dailyTransferencia">$0.00</div></div>
+          <div class="kpi wide amber">
+            <div class="kpi-top"><span class="label">Total General</span><span class="material-symbols-outlined">analytics</span></div>
+            <div class="value" id="dailyGrand">$0.00</div>
+          </div>
+          <div class="kpi blue">
+            <div class="kpi-top"><span class="label">Efectivo</span><span class="material-symbols-outlined">payments</span></div>
+            <div class="value" id="dailyEfectivo">$0.00</div>
+          </div>
+          <div class="kpi purple">
+            <div class="kpi-top"><span class="label">Transferencia</span><span class="material-symbols-outlined">account_balance</span></div>
+            <div class="value" id="dailyTransferencia">$0.00</div>
+          </div>
+          <div class="kpi red">
+            <div class="kpi-top"><span class="label">Pedicura</span><span class="material-symbols-outlined">spa</span></div>
+            <div class="value" id="dailyPedicura">$0.00</div>
+          </div>
+          <div class="kpi green">
+            <div class="kpi-top"><span class="label">Inversión (30%)</span><span class="material-symbols-outlined">rebase</span></div>
+            <div class="value" id="dailyInversion">$0.00</div>
+          </div>
+          <div class="kpi wide highlight">
+            <div class="kpi-top"><span class="label">Ganancia Neta</span><span class="material-symbols-outlined">savings</span></div>
+            <div class="value" id="dailyGanancia">$0.00</div>
+          </div>
         </div>
-        <div class="kpi-grid">
-          <div class="kpi purple"><div class="label">Pedicura</div><div class="value" id="dailyPedicura">$0.00</div></div>
-          <div class="kpi red"><div class="label">Inversión (30%)</div><div class="value" id="dailyInversion">$0.00</div></div>
-          <div class="kpi green wide"><div class="label">Ganancia Neta</div><div class="value" id="dailyGanancia">$0.00</div></div>
-        </div>
-        <p style="font-size:12px; color:var(--on-surface-variant); margin:10px 0 6px;" id="dailyRecordDate"></p>
+        <p class="record-date" id="dailyRecordDate"></p>
         <div id="dailyBreakdown"></div>
       </div>
 
       <!-- TAB SEMANAL -->
       <div id="fintab-weekly" class="fintab">
-        <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-          <span id="weekRangeLabel" style="font-weight:600; font-size:13px;"></span>
-          <span style="font-size:10px; background:#fdeceb; color:var(--secondary); padding:4px 8px; border-radius:20px;">Esta semana</span>
+        <div class="card range-card">
+          <span id="weekRangeLabel"></span>
+          <span class="pill-badge">Esta semana</span>
         </div>
         <div class="kpi-grid">
-          <div class="kpi wide"><div class="label">Total General</div><div class="value" id="weekGrand">$0.00</div></div>
-          <div class="kpi amber"><div class="label">Efectivo</div><div class="value" id="weekEfectivo">$0.00</div></div>
-          <div class="kpi blue"><div class="label">Transferencia</div><div class="value" id="weekTransferencia">$0.00</div></div>
-        </div>
-        <div class="kpi-grid">
-          <div class="kpi purple"><div class="label">Pedicura</div><div class="value" id="weekPedicura">$0.00</div></div>
-          <div class="kpi red"><div class="label">Inversión (30%)</div><div class="value" id="weekInversion">$0.00</div></div>
-          <div class="kpi green wide"><div class="label">Ganancia Neta</div><div class="value" id="weekGanancia">$0.00</div></div>
+          <div class="kpi wide amber">
+            <div class="kpi-top"><span class="label">Total General</span><span class="material-symbols-outlined">analytics</span></div>
+            <div class="value" id="weekGrand">$0.00</div>
+          </div>
+          <div class="kpi blue">
+            <div class="kpi-top"><span class="label">Efectivo</span><span class="material-symbols-outlined">payments</span></div>
+            <div class="value" id="weekEfectivo">$0.00</div>
+          </div>
+          <div class="kpi purple">
+            <div class="kpi-top"><span class="label">Transferencia</span><span class="material-symbols-outlined">account_balance</span></div>
+            <div class="value" id="weekTransferencia">$0.00</div>
+          </div>
+          <div class="kpi red">
+            <div class="kpi-top"><span class="label">Pedicura</span><span class="material-symbols-outlined">spa</span></div>
+            <div class="value" id="weekPedicura">$0.00</div>
+          </div>
+          <div class="kpi green">
+            <div class="kpi-top"><span class="label">Inversión (30%)</span><span class="material-symbols-outlined">rebase</span></div>
+            <div class="value" id="weekInversion">$0.00</div>
+          </div>
+          <div class="kpi wide highlight">
+            <div class="kpi-top"><span class="label">Ganancia Neta</span><span class="material-symbols-outlined">savings</span></div>
+            <div class="value" id="weekGanancia">$0.00</div>
+          </div>
         </div>
         <div id="weeklyTable"></div>
       </div>
 
       <!-- TAB MENSUAL -->
       <div id="fintab-monthly" class="fintab">
-        <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-          <span id="monthLabel" style="font-weight:600; font-size:13px;"></span>
-          <span style="font-size:10px; background:#fdeceb; color:var(--secondary); padding:4px 8px; border-radius:20px;">Este mes</span>
+        <div class="card range-card">
+          <span id="monthLabel"></span>
+          <span class="pill-badge">Este mes</span>
         </div>
         <div class="kpi-grid">
-          <div class="kpi wide"><div class="label">Total General</div><div class="value" id="monthGrand">$0.00</div></div>
-          <div class="kpi amber"><div class="label">Efectivo</div><div class="value" id="monthEfectivo">$0.00</div></div>
-          <div class="kpi blue"><div class="label">Transferencia</div><div class="value" id="monthTransferencia">$0.00</div></div>
-        </div>
-        <div class="kpi-grid">
-          <div class="kpi purple"><div class="label">Pedicura</div><div class="value" id="monthPedicura">$0.00</div></div>
-          <div class="kpi red"><div class="label">Inversión (30%)</div><div class="value" id="monthInversion">$0.00</div></div>
-          <div class="kpi green wide"><div class="label">Ganancia Neta</div><div class="value" id="monthGanancia">$0.00</div></div>
+          <div class="kpi wide amber">
+            <div class="kpi-top"><span class="label">Total General</span><span class="material-symbols-outlined">analytics</span></div>
+            <div class="value" id="monthGrand">$0.00</div>
+          </div>
+          <div class="kpi blue">
+            <div class="kpi-top"><span class="label">Efectivo</span><span class="material-symbols-outlined">payments</span></div>
+            <div class="value" id="monthEfectivo">$0.00</div>
+          </div>
+          <div class="kpi purple">
+            <div class="kpi-top"><span class="label">Transferencia</span><span class="material-symbols-outlined">account_balance</span></div>
+            <div class="value" id="monthTransferencia">$0.00</div>
+          </div>
+          <div class="kpi red">
+            <div class="kpi-top"><span class="label">Pedicura</span><span class="material-symbols-outlined">spa</span></div>
+            <div class="value" id="monthPedicura">$0.00</div>
+          </div>
+          <div class="kpi green">
+            <div class="kpi-top"><span class="label">Inversión (30%)</span><span class="material-symbols-outlined">rebase</span></div>
+            <div class="value" id="monthInversion">$0.00</div>
+          </div>
+          <div class="kpi wide highlight">
+            <div class="kpi-top"><span class="label">Ganancia Neta</span><span class="material-symbols-outlined">savings</span></div>
+            <div class="value" id="monthGanancia">$0.00</div>
+          </div>
         </div>
         <div id="monthlyTable"></div>
       </div>
     </section>
 
   </main>
-
-  <button class="fab" id="fab">+</button>
 
   <!-- ===================== MODAL TURNO ===================== -->
   <div class="modal-backdrop" id="appointmentModal">

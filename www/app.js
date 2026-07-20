@@ -35,6 +35,18 @@ function dayName(dateStr) {
 function isSaturday(dateStr) {
   return new Date(dateStr + 'T00:00:00').getDay() === 6;
 }
+function isSunday(dateStr) {
+  return new Date(dateStr + 'T00:00:00').getDay() === 0;
+}
+const MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const WEEKDAY_NAMES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+// Cupos totales por día: domingo no se trabaja, sábado 1 turno, resto 2 turnos
+function slotsForDate(dateStr) {
+  const day = new Date(dateStr + 'T00:00:00').getDay();
+  if (day === 0) return 0;
+  if (day === 6) return 1;
+  return 2;
+}
 function uid() {
   return 'a_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
 }
@@ -74,7 +86,9 @@ const ALL_TIMES = ['08:30', '13:30'];
 
 function getAvailableTimes(dateStr, excludeId) {
   if (!dateStr) return [];
-  const base = isSaturday(dateStr) ? ['08:30'] : ALL_TIMES.slice();
+  const totalSlots = slotsForDate(dateStr);
+  if (totalSlots === 0) return [];
+  const base = totalSlots === 1 ? ['08:30'] : ALL_TIMES.slice();
   const list = loadAppointments();
   const taken = list
     .filter(a => a.appointment_date === dateStr && a.id !== excludeId)
@@ -95,7 +109,7 @@ function renderAppointments() {
   document.getElementById('appointmentsCount').textContent = list.length;
 
   if (list.length === 0) {
-    container.innerHTML = `<div class="empty-state"><span class="emoji">📅</span><p>No hay turnos cargados.<br>Tocá el botón + para agregar uno.</p></div>`;
+    container.innerHTML = `<div class="empty-state"><span class="material-symbols-outlined">calendar_month</span><p>No hay turnos cargados.<br>Andá a la sección Calendario para agregar uno.</p></div>`;
     return;
   }
 
@@ -106,11 +120,11 @@ function renderAppointments() {
       <div>
         <div class="appt-date">${dayName(a.appointment_date)} ${fmtDateFull(a.appointment_date)} · ${a.appointment_time}</div>
         <div class="appt-name">${escapeHtml(a.client_name)}</div>
-        <div class="appt-meta">${a.phone ? '📞 ' + escapeHtml(a.phone) : 'Sin teléfono'}</div>
+        <div class="appt-meta">${a.phone ? '<span class="material-symbols-outlined">call</span> ' + escapeHtml(a.phone) : 'Sin teléfono'}</div>
       </div>
-      <div>
-        <button class="icon-btn" data-edit="${a.id}" title="Editar">✏️</button>
-        <button class="icon-btn" data-del="${a.id}" title="Eliminar">🗑️</button>
+      <div class="appt-actions">
+        <button class="icon-btn" data-edit="${a.id}" title="Editar"><span class="material-symbols-outlined">edit</span></button>
+        <button class="icon-btn danger" data-del="${a.id}" title="Eliminar"><span class="material-symbols-outlined">delete</span></button>
       </div>
     `;
     container.appendChild(card);
@@ -135,14 +149,18 @@ function deleteAppointment(id) {
   const list = loadAppointments().filter(a => a.id !== id);
   saveAppointments(list);
   renderAppointments();
+  renderCalendar();
   toast('Turno eliminado');
 }
 
-function openAppointmentModal(editId) {
+function openAppointmentModal(editId, fixedDate) {
   const modal = document.getElementById('appointmentModal');
   const form = document.getElementById('appointmentForm');
+  const dateInput = document.getElementById('apptDate');
   form.reset();
   document.getElementById('appointmentEditId').value = '';
+  dateInput.disabled = false;
+  dateInput.classList.remove('is-locked');
 
   if (editId) {
     const appt = loadAppointments().find(a => a.id === editId);
@@ -150,15 +168,22 @@ function openAppointmentModal(editId) {
     document.getElementById('appointmentModalTitle').textContent = 'Editar turno';
     document.getElementById('appointmentEditId').value = appt.id;
     document.getElementById('apptClientName').value = appt.client_name;
-    document.getElementById('apptDate').value = appt.appointment_date;
+    dateInput.value = appt.appointment_date;
+    dateInput.disabled = true;
+    dateInput.classList.add('is-locked');
     document.getElementById('apptPhone').value = appt.phone || '';
     updateTimeOptions(appt.appointment_date, appt.id);
     document.getElementById('apptTime').value = appt.appointment_time;
     document.getElementById('deleteApptBtn').style.display = 'block';
   } else {
     document.getElementById('appointmentModalTitle').textContent = 'Nuevo turno';
-    document.getElementById('apptDate').value = todayStr();
-    updateTimeOptions(todayStr(), null);
+    const dateToUse = fixedDate || todayStr();
+    dateInput.value = dateToUse;
+    if (fixedDate) {
+      dateInput.disabled = true;
+      dateInput.classList.add('is-locked');
+    }
+    updateTimeOptions(dateToUse, null);
     document.getElementById('deleteApptBtn').style.display = 'none';
   }
   modal.classList.add('active');
@@ -207,6 +232,7 @@ function handleAppointmentSubmit(e) {
   saveAppointments(list);
   closeAppointmentModal();
   renderAppointments();
+  renderCalendar();
   toast('Turno guardado correctamente');
 }
 
@@ -287,7 +313,7 @@ function renderDailyFinance() {
 
   const box = document.getElementById('dailyBreakdown');
   if (!record) {
-    box.innerHTML = `<div class="empty-state"><span class="emoji">💰</span><p>No hay finanzas cargadas para esta fecha.</p></div>`;
+    box.innerHTML = `<div class="empty-state"><span class="material-symbols-outlined">payments</span><p>No hay finanzas cargadas para esta fecha.</p></div>`;
     return;
   }
   box.innerHTML = `
@@ -313,7 +339,7 @@ function renderWeeklyFinance() {
 
   const box = document.getElementById('weeklyTable');
   if (dates.length === 0) {
-    box.innerHTML = `<div class="empty-state"><span class="emoji">📆</span><p>No hay datos registrados para esta semana.</p></div>`;
+    box.innerHTML = `<div class="empty-state"><span class="material-symbols-outlined">event_busy</span><p>No hay datos registrados para esta semana.</p></div>`;
     return;
   }
   box.innerHTML = buildDayTable(dates, finances, true);
@@ -327,13 +353,12 @@ function renderMonthlyFinance() {
   const totals = computeTotals(sumRecords(records));
   renderFinanceKPIs('month', totals);
 
-  const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const [y, m] = ym.split('-');
-  document.getElementById('monthLabel').textContent = `${monthNames[parseInt(m,10)-1]} ${y}`;
+  document.getElementById('monthLabel').textContent = `${MONTH_NAMES[parseInt(m,10)-1]} ${y}`;
 
   const box = document.getElementById('monthlyTable');
   if (dates.length === 0) {
-    box.innerHTML = `<div class="empty-state"><span class="emoji">📆</span><p>No hay datos registrados para este mes.</p></div>`;
+    box.innerHTML = `<div class="empty-state"><span class="material-symbols-outlined">event_busy</span><p>No hay datos registrados para este mes.</p></div>`;
     return;
   }
   box.innerHTML = buildDayTable(dates, finances, false);
@@ -437,6 +462,7 @@ function importData(file) {
       if (data.appointments) saveAppointments(data.appointments);
       if (data.finances) saveFinances(data.finances);
       renderAppointments();
+      renderCalendar();
       showFinanceTab('daily');
       toast('Backup restaurado correctamente');
     } catch (e) {
@@ -446,24 +472,129 @@ function importData(file) {
   reader.readAsText(file);
 }
 
+// ---------- CALENDARIO ----------
+let calendarViewYear = new Date().getFullYear();
+let calendarViewMonth = new Date().getMonth(); // 0-11
+
+function changeCalendarMonth(delta) {
+  calendarViewMonth += delta;
+  if (calendarViewMonth < 0) { calendarViewMonth = 11; calendarViewYear--; }
+  if (calendarViewMonth > 11) { calendarViewMonth = 0; calendarViewYear++; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('calendarGrid');
+  const label = document.getElementById('calMonthLabel');
+  if (!grid || !label) return;
+
+  label.textContent = `${MONTH_NAMES[calendarViewMonth]} ${calendarViewYear}`;
+
+  const firstDay = new Date(calendarViewYear, calendarViewMonth, 1);
+  const startWeekday = firstDay.getDay();
+  const daysInMonth = new Date(calendarViewYear, calendarViewMonth + 1, 0).getDate();
+  const daysInPrevMonth = new Date(calendarViewYear, calendarViewMonth, 0).getDate();
+  const today = todayStr();
+  const appointments = loadAppointments();
+
+  let html = '';
+
+  for (let i = 0; i < startWeekday; i++) {
+    const dayNum = daysInPrevMonth - startWeekday + 1 + i;
+    html += `<div class="cal-day other-month"><span class="cal-num">${dayNum}</span><span class="cal-tag">Mes ant.</span></div>`;
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateObj = new Date(calendarViewYear, calendarViewMonth, d);
+    const dateStr = toDateStr(dateObj);
+    const weekday = dateObj.getDay();
+    const isToday = dateStr === today;
+
+    let statusClass, tag, clickable = false;
+
+    if (weekday === 0) {
+      statusClass = 'sunday';
+      tag = 'Domingo';
+    } else if (dateStr < today) {
+      statusClass = 'past';
+      tag = 'Pasó';
+    } else {
+      const total = slotsForDate(dateStr);
+      const taken = appointments.filter(a => a.appointment_date === dateStr).length;
+      const available = total - taken;
+      if (available <= 0) {
+        statusClass = 'full';
+        tag = 'Lleno';
+      } else if (available === 1) {
+        statusClass = 'low';
+        tag = '1 disp.';
+        clickable = true;
+      } else {
+        statusClass = 'open';
+        tag = available + ' disp.';
+        clickable = true;
+      }
+    }
+
+    html += `<div class="cal-day ${statusClass}${isToday ? ' today' : ''}" data-status="${statusClass}" ${clickable ? `data-date="${dateStr}"` : ''}>
+      <span class="cal-num">${d}</span>
+      <span class="cal-tag">${tag}</span>
+    </div>`;
+  }
+
+  grid.innerHTML = html;
+
+  grid.querySelectorAll('.cal-day[data-date], .cal-day.sunday, .cal-day.past, .cal-day.full').forEach(cell => {
+    cell.addEventListener('click', () => {
+      const date = cell.dataset.date;
+      const status = cell.dataset.status;
+      if (date) {
+        openAppointmentModal(null, date);
+      } else if (status === 'sunday') {
+        toast('Los domingos no se trabaja', true);
+      } else if (status === 'past') {
+        toast('Ese día ya pasó', true);
+      } else if (status === 'full') {
+        toast('Ese día ya está lleno', true);
+      }
+    });
+  });
+}
+
 // ---------- Navegación principal ----------
 function showMainSection(section) {
-  ['turnos', 'finanzas'].forEach(s => {
+  ['turnos', 'calendario', 'finanzas'].forEach(s => {
     document.getElementById('section-' + s).classList.toggle('active', s === section);
     document.getElementById('navbtn-' + s).classList.toggle('active', s === section);
   });
-  document.getElementById('fab').style.display = section === 'turnos' ? 'block' : 'none';
+  if (section === 'calendario') renderCalendar();
+}
+
+// ---------- Menú lateral (drawer) ----------
+function openDrawer() {
+  document.getElementById('drawer').classList.add('active');
+  document.getElementById('drawerBackdrop').classList.add('active');
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('active');
+  document.getElementById('drawerBackdrop').classList.remove('active');
 }
 
 // ---------- Init ----------
 document.addEventListener('DOMContentLoaded', () => {
   renderAppointments();
   showFinanceTab('daily');
+  renderCalendar();
 
-  document.getElementById('navbtn-turnos').addEventListener('click', () => showMainSection('turnos'));
-  document.getElementById('navbtn-finanzas').addEventListener('click', () => showMainSection('finanzas'));
+  document.getElementById('menuBtn').addEventListener('click', openDrawer);
+  document.getElementById('drawerBackdrop').addEventListener('click', closeDrawer);
+  document.getElementById('navbtn-turnos').addEventListener('click', () => { showMainSection('turnos'); closeDrawer(); });
+  document.getElementById('navbtn-calendario').addEventListener('click', () => { showMainSection('calendario'); closeDrawer(); });
+  document.getElementById('navbtn-finanzas').addEventListener('click', () => { showMainSection('finanzas'); closeDrawer(); });
 
-  document.getElementById('fab').addEventListener('click', () => openAppointmentModal(null));
+  document.getElementById('calPrevBtn').addEventListener('click', () => changeCalendarMonth(-1));
+  document.getElementById('calNextBtn').addEventListener('click', () => changeCalendarMonth(1));
+
   document.getElementById('closeApptModal').addEventListener('click', closeAppointmentModal);
   document.getElementById('appointmentForm').addEventListener('submit', handleAppointmentSubmit);
   document.getElementById('apptDate').addEventListener('change', (e) => {
@@ -486,6 +617,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('financeDailyDate').addEventListener('change', renderDailyFinance);
 
   document.getElementById('exportBtn').addEventListener('click', exportData);
+  document.getElementById('importTriggerBtn').addEventListener('click', () => {
+    document.getElementById('importInput').click();
+  });
   document.getElementById('importInput').addEventListener('change', (e) => {
     if (e.target.files[0]) importData(e.target.files[0]);
   });
